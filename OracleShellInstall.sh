@@ -2,7 +2,8 @@
 echo "####################################################################################"
 echo "##Author 	: LuciferLiu"
 echo "##Blog   	: https://blog.csdn.net/m0_50546016"
-echo "##Version	: 5.0"
+echo "##Github        : https://github.com/pc-study/InstallOracleshell"
+echo "##Version	: 1.0"
 echo "##Function   	: Oracle 11g/12c/18c/19c(Single and Rac) install on Linux 6/7"
 echo "####################################################################################"
 echo "#执行脚本前："
@@ -14,7 +15,7 @@ echo "##########################################################################
 ####################################################################################
 # Parameters For Install
 ####################################################################################
-#Oracle Install Mode(RAC/Single/HA)
+#Oracle Install Mode(RAC/Single/RESTART)
 OracleInstallMode=
 SOFTWAREDIR=$(pwd)
 DAYTIME=$(date +%Y%m%d)
@@ -773,13 +774,11 @@ if [ "${OracleInstallMode}" = "RAC" ] || [ "${OracleInstallMode}" = "rac" ]; the
   if [ "${nodeNum}" -eq 1 ]; then
     c1 "Current node：1" wb
     hostname=${RAC1HOSTNAME}
-    PublicIP=${RAC1PUBLICIP}
     GRID_SIDTemp=${GRID_SID}$nodeNum
     ORACLE_SIDTemp=${ORACLE_SID}$nodeNum
   elif [ "${nodeNum}" -eq 2 ]; then
     c1 "Current node：2" wb
     hostname=${RAC2HOSTNAME}
-    PublicIP=${RAC2PUBLICIP}
     GRID_SIDTemp=${GRID_SID}$nodeNum
     ORACLE_SIDTemp=${ORACLE_SID}$nodeNum
   else
@@ -788,12 +787,10 @@ if [ "${OracleInstallMode}" = "RAC" ] || [ "${OracleInstallMode}" = "rac" ]; the
   fi
 elif [ "${OracleInstallMode}" = "restart" ] || [ "${OracleInstallMode}" = "RESTART" ]; then
   hostname=${HOSTNAME}
-  PublicIP=${PUBLICIP}
   ORACLE_SIDTemp=${ORACLE_SID}
   GRID_SIDTemp=${GRID_SID}
 else
   hostname=${HOSTNAME}
-  PublicIP=${PUBLICIP}
   ORACLE_SIDTemp=${ORACLE_SID}
 fi
 
@@ -823,7 +820,7 @@ InstallRPM() {
         echo "baseurl=file://""${mountPatch}"
         echo "enabled=1"
         echo "gpgcheck=1"
-      } >>/etc/yum.repos.d/local.repo
+      } >/etc/yum.repos.d/local.repo
       rpm --import "${mountPatch}"/RPM-GPG-KEY-redhat-release
     fi
     if [ "${OS_VERSION}" = "linux6" ]; then
@@ -832,6 +829,7 @@ InstallRPM() {
         yum groupinstall -y "X Window System"
         yum groupinstall -y "Desktop"
         yum install -y nautilus-open-terminal
+        yum install -y tigervnc*
       fi
       if [ "$(rpm -q bc binutils compat-libcap1 compat-libstdc++-33 gcc gcc-c++ elfutils-libelf elfutils-libelf-devel glibc glibc-devel libaio libaio-devel libgcc libstdc++ libstdc++-devel libxcb libX11 libXau libXi libXrender make net-tools smartmontools sysstat e2fsprogs e2fsprogs-libs expect unzip openssh-clients readline psmisc ksh nfs-utils --qf '%{name}.%{arch}\n' | grep -E -c "not installed")" -gt 0 ]; then
         yum install -y bc \
@@ -871,6 +869,7 @@ InstallRPM() {
       if [ "${TuXingHua}" = "y" ] || [ "${TuXingHua}" = "Y" ]; then
         #LINUX 7
         yum groupinstall -y "Server with GUI"
+        yum install -y tigervnc*
       fi
       if [ "$(rpm -q bc binutils compat-libcap1 compat-libstdc++-33 gcc gcc-c++ elfutils-libelf elfutils-libelf-devel glibc glibc-devel ksh libaio libaio-devel libgcc libstdc++ libstdc++-devel libxcb libX11 libXau libXi libXtst libXrender libXrender-devel make net-tools nfs-utils smartmontools sysstat e2fsprogs e2fsprogs-libs fontconfig-devel expect unzip openssh-clients readline psmisc --qf '%{name}.%{arch}\n' | grep -E -c "not installed")" -gt 0 ]; then
         yum install -y bc \
@@ -1011,15 +1010,13 @@ logwrite "HOSTNAME" "echo ${hostname}"
 # Configure /etc/hosts
 ####################################################################################
 SetHosts() {
-  if [[ $(grep -E "${hostname}" /etc/hosts) != "${hostname}" ]] || [[ $(grep -E "${PublicIP}" /etc/hosts) != "${PublicIP}" ]]; then
+  if [ "$(grep -E -c "#OracleBegin" /etc/hosts)" -eq 0 ]; then
     [ ! -f /etc/hosts."${DAYTIME}" ] && cp /etc/hosts /etc/hosts."${DAYTIME}"
     if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ]; then
       ##Configure DNS HOSTS
       if [ "${DNS}" = "y" ] || [ "${DNS}" = "Y" ]; then
-        cat <<EOF >/etc/hosts
-127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
-::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
-
+        cat <<EOF >>/etc/hosts
+##OracleBegin
 ##Public IP
 $RAC1PUBLICIP ${RAC1HOSTNAME}.${DNSNAME} $RAC1HOSTNAME
 $RAC2PUBLICIP ${RAC2HOSTNAME}.${DNSNAME} $RAC2HOSTNAME
@@ -1061,10 +1058,8 @@ $RAC2PRIVIP1 ${RAC2HOSTNAME}-priv1.${DNSNAME} ${RAC2HOSTNAME}-priv1
 EOF
         fi
       else
-        cat <<EOF >/etc/hosts
-127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
-::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
-
+        cat <<EOF >>/etc/hosts
+##OracleBegin
 ##Public IP
 $RAC1PUBLICIP $RAC1HOSTNAME
 $RAC2PUBLICIP $RAC2HOSTNAME
@@ -1082,10 +1077,8 @@ $RACSCANIP $RACSCANNAME
 EOF
       fi
     else
-      cat <<EOF >/etc/hosts
-127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
-::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
-
+      cat <<EOF >>/etc/hosts
+##OracleBegin
 #Public IP
 $PUBLICIP	$HOSTNAME
 EOF
@@ -1755,16 +1748,16 @@ EOF
 ####################################################################################
 Disableavahi() {
   if [ "${OS_VERSION}" = "linux6" ]; then
+    yum install -y avahi*
     if [ "$(chkconfig --list | grep avahi-daemon | grep -c '3:on')" -gt 0 ]; then
-      yum install -y avahi*
       service avahi-daemon stop
       chkconfig avahi-daemon off
     fi
     logwrite "avahi-daemon" "service avahi-daemon  status"
 
   elif [ "${OS_VERSION}" = "linux7" ]; then
+    yum install -y avahi*
     if [ "$(systemctl status avahi-daemon | grep -c running)" -gt 0 ]; then
-      yum install -y avahi*
       systemctl stop avahi-daemon.socket
       systemctl disable avahi-daemon.socket
       systemctl stop avahi-daemon.service
@@ -2012,7 +2005,8 @@ EOF
 
   fi
 
-  logwrite "/dev/shm" "cat /etc/fstab"
+  logwrite "/etc/fstab" "cat /etc/fstab"
+  logwrite "shm" "df -Th /dev/shm"
   logwrite "df -hP" "df -hP"
 
   ####################################################################################
@@ -3494,8 +3488,11 @@ EOF
   ## 18C AND 19C -applyRU
   elif [ "${DB_VERSION}" = "18.0.0.0" ] || [[ "${DB_VERSION}" == "19.3.0.0" ]]; then
     if [ -n "${GPATCH}" ]; then
-      ##RAC OR HA
+      ##RAC OR RESTART
       su - oracle -c "${ENV_ORACLE_HOME}/runInstaller -silent -force -responseFile ${SOFTWAREDIR}/db.rsp -ignorePrereq -waitForCompletion -applyRU ${SOFTWAREDIR}/${GPATCH}"
+    elif [ -n "${OPATCH}" ]; then
+      ##RAC OR RESTART
+      su - oracle -c "${ENV_ORACLE_HOME}/runInstaller -silent -force -responseFile ${SOFTWAREDIR}/db.rsp -ignorePrereq -waitForCompletion -applyRU ${SOFTWAREDIR}/${OPATCH}"
     else
       ##NO PATCH
       su - oracle -c "${ENV_ORACLE_HOME}/runInstaller -silent -force -responseFile ${SOFTWAREDIR}/db.rsp -ignorePrereq -waitForCompletion"
@@ -3568,13 +3565,15 @@ EOF
         fi
       fi
     else
-      createNetca
-      ## NOT RAC
-      su - oracle <<EOF
+      if [ "${DB_VERSION}" = "11.2.0.4" ] || [[ "${DB_VERSION}" == "12.2.0.1" ]]; then
+        createNetca
+        ## NOT RAC
+        su - oracle <<EOF
 cd ${SOFTWAREDIR}/${OPATCH} || return
 ${ENV_ORACLE_HOME}/OPatch/opatch prereq CheckConflictAgainstOHWithDetail -ph ./
 ${ENV_ORACLE_HOME}/OPatch/opatch apply -silent
 EOF
+      fi
     fi
   fi
 
@@ -4135,7 +4134,7 @@ elif [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ]; t
     fi
   fi
 elif [ "${OracleInstallMode}" = "restart" ] || [ "${OracleInstallMode}" = "RESTART" ]; then
-  #For HA
+  #For RESTART
   SwapCheck
   InstallRPM
   SetHostName
