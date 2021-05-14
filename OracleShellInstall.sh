@@ -267,12 +267,6 @@ help() {
   c1 "-op,		--ORAPASSWD			ORACLE USER PASSWORD(oracle)" green
   c1 "-b,		--ENV_BASE_DIR			ORACLE BASE DIR(/u01/app)" green
   c1 "-s,		--CHARACTERSET			ORACLE CHARACTERSET(ZHS16GBK|AL32UTF8)" green
-  c1 "-m,		--ONLYCONFIGOS			ONLY CONFIG SYSTEM PARAMETER(Y|N)" green
-  c1 "-g,		--ONLYINSTALLGRID 		ONLY INSTALL GRID SOFTWARE(Y|N)" green
-  c1 "-w,		--ONLYINSTALLORACLE 		ONLY INSTALL ORACLE SOFTWARE(Y|N)" green
-  c1 "-ocd,		--ONLYCREATEDB		        ONLY CREATE DATABASE(Y|N)" green
-  c1 "-gpa,		--GRID RELEASE UPDATE		GRID RELEASE UPDATE(32072711)" green
-  c1 "-opa,		--ORACLE RELEASE UPDATE		ORACLE RELEASE UPDATE(32072711)" green
   c1 "-rs,		--ROOTPASSWD			ROOT USER PASSWORD" green
   c1 "-gp,		--GRIDPASSWD			GRID USER PASSWORD(oracle)" green
   c1 "-pb1,		--RAC1PUBLICIP			RAC NODE ONE PUBLIC IP" green
@@ -283,18 +277,16 @@ help() {
   c1 "-pi2,		--RAC2PRIVIP			RAC NODE SECOND PRIVATE IP(10.10.1.2)" green
   c1 "-pi3,		--RAC1PRIVIP1			RAC NODE ONE PRIVATE IP(10.1.1.1)" green
   c1 "-pi4,		--RAC2PRIVIP1			RAC NODE SECOND PRIVATE IP(10.1.1.2)" green
+  c1 "-puf,		--RACPUBLICFCNAME	        RAC PUBLIC FC NAME" green
+  c1 "-prf,		--RACPRIVFCNAME			RAC PRIVATE FC NAME" green
+  c1 "-prf1,		--RACPRIVFCNAME1		RAC PRIVATE FC NAME" green
   c1 "-si,		--RACSCANIP			RAC SCAN IP" green
-  c1 "-sn,		--RACSCANNAME			RAC SCAN NAME(orcl-scan)" green
-  c1 "-cn,		--CLUSTERNAME			RAC CLUSTER NAME(orcl-cluster)" green
   c1 "-dn,		--ASMDATANAME			RAC ASM DATADISKGROUP NAME(DATA)" green
   c1 "-on,		--ASMOCRNAME			RAC ASM OCRDISKGROUP NAME(OCR)" green
   c1 "-dd,		--DATA_BASEDISK			RAC DATADISK DISKNAME" green
   c1 "-od,		--OCRP_BASEDISK			RAC OCRDISK DISKNAME" green
   c1 "-or,		--OCRREDUN			RAC OCR REDUNDANCY(EXTERNAL|NORMAL|HIGH)" green
   c1 "-dr,		--DATAREDUN			RAC DATA REDUNDANCY(EXTERNAL|NORMAL|HIGH)" green
-  c1 "-puf,		--RACPUBLICFCNAME	        RAC PUBLIC FC NAME" green
-  c1 "-prf,		--RACPRIVFCNAME			RAC PRIVATE FC NAME" green
-  c1 "-prf1,		--RACPRIVFCNAME1		RAC PRIVATE FC NAME" green
   c1 "-ts,            --TIMESERVER                    RAC TIME SERVER IP" green
   c1 "-txh            --TuXingHua                     Tu Xing Hua Install" green
   c1 "-udev           --UDEV                          Whether Auto Set UDEV" green
@@ -302,6 +294,12 @@ help() {
   c1 "-dnss            --DNSSERVER                    RAC CONFIGURE DNSSERVER LOCAL(Y|N)" green
   c1 "-dnsn           --DNSNAME                       RAC DNSNAME(orcl.com)" green
   c1 "-dnsi           --DNSIP                         RAC DNS IP" green
+  c1 "-m,		--ONLYCONFIGOS			ONLY CONFIG SYSTEM PARAMETER(Y|N)" green
+  c1 "-g,		--ONLYINSTALLGRID 		ONLY INSTALL GRID SOFTWARE(Y|N)" green
+  c1 "-w,		--ONLYINSTALLORACLE 		ONLY INSTALL ORACLE SOFTWARE(Y|N)" green
+  c1 "-ocd,		--ONLYCREATEDB		        ONLY CREATE DATABASE(Y|N)" green
+  c1 "-gpa,		--GRID RELEASE UPDATE		GRID RELEASE UPDATE(32072711)" green
+  c1 "-opa,		--ORACLE RELEASE UPDATE		ORACLE RELEASE UPDATE(32072711)" green
   exit 0
 }
 
