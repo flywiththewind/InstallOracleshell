@@ -132,7 +132,9 @@ ___cdb 12C后开始支持容器，只需要加上如下参数即可：___
 -c TRUE `# cdb`
 -pb singlepdb `# pdbname`
 ```
+<font color=#FF000 >***脚本须Root用户下执行：***</font>
 
+`chmod +x OracleShellInstall.sh`
 #### 2.3.1 Single模式安装
 
 ```shellscript
