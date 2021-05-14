@@ -18,6 +18,7 @@
 ##### 操作系统版本： Linux6(x86_64)、Linux7(x86_64)。
 
 ##### 包括Single、Oracle Restart、Oracle Real Cluster模式。
+<font color='red'>***目前RAC只支持双节点安装。***</font>
 
 # 二、使用
 
@@ -129,8 +130,8 @@ iscsiadm -m node -T iqn.2008-08.com.starwindsoftware:10.211.55.18-lucifer -p 10.
 ___cdb 12C后开始支持容器，只需要加上如下参数即可：___
 
 ```shellscript
--c TRUE `# cdb`
--pb singlepdb `# pdbname`
+-c TRUE `# cdb` \
+-pb singlepdb `# pdbname` \
 ```
 <font color=#FF000 >***脚本须Root用户下执行：***</font>
 
@@ -189,4 +190,87 @@ cd /soft
 -on OCR `# asm ocr diskgroupname`\
 -dn DATA `# asm data diskgroupname`\
 -gpa 32580003 `# GRID PATCH`
+```
+
+## 三. 功能介绍
+
+#### 3.1 配置节点间互信
+
+RAC模式自动配置节点间互信
+
+#### 3.2 配置DNS服务器
+
+```
+-dns Y `# DNS` \
+-dnss Y `# LOCAL DNSSERVER` \
+-dnsn lucifer.com `# DNS SERVER NAME` \
+-dnsi 10.211.55.200 `# DNS SERVER IP` \
+```
+
+#### 3.3 记录安装日志
+
+日志记录在软件目录中，格式为：
+
+`oracleAllSilent_$(date +"20%y%m%d%H%M%S").log`
+
+#### 3.4 可重复执行
+
+执行失败支持多次执行安装。
+
+#### 3.5 帮助功能
+
+`./OracleShellInstall --help`
+
+#### 3.6 自动配置Multipath+UDEV绑盘
+
+```shellscript
+-dd /dev/sde,/dev/sdf `# asm data disk`\
+-od /dev/sdb,/dev/sdc,/dev/sdd `# asm ocr disk`\
+```
+
+#### 3.7 配置时间同步crontab
+
+```shellscript
+-ts 10.211.55.18 `# timeserver` \
+```
+
+#### 3.8 自动安装补丁（PSU,RU,RUR）
+
+```shellscript
+-gpa 32580003 `# Grid PATCH` \
+-opa 32580014 `# Oracle PATCH` \
+```
+
+#### 3.9 数据库优化
+
+    1.自动优化数据库参数
+    2.创建备份crontab+scripts
+    3.设置数据库开机自启动
+    4.设置pdb随cdb启动
+
+#### 3.10 最多支持2组Private IP
+
+```shellscript
+-pi1 10.10.1.1 -pi2 10.10.1.2 `# node private ip`\
+-prf eth1 -prf1 eth2 `# network fcname`\
+```
+
+#### 3.11 最多支持3组Scan IP
+
+<font color=red >___必须配置DNS才可使用多个scanip___</font>
+
+```shellscript
+-si 10.211.55.104,10.211.55.105,10.211.55.106 `# scan ip`\
+```
+
+#### 3.12 支持图形化安装+VNC
+
+```shellscript
+-txh Y `#tuxinghua` \
+```
+
+#### 3.13 支持只配置主机环境
+
+```shellscript
+-m Y `#Only Config System` \
 ```

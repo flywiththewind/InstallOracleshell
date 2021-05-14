@@ -2,7 +2,8 @@
 echo "####################################################################################"
 echo "##Author 	: LuciferLiu"
 echo "##Blog   	: https://blog.csdn.net/m0_50546016"
-echo "##Version	: 5.0"
+echo "##Github        : https://github.com/pc-study/InstallOracleshell"
+echo "##Version	: 1.0"
 echo "##Function   	: Oracle 11g/12c/18c/19c(Single and Rac) install on Linux 6/7"
 echo "####################################################################################"
 echo "#执行脚本前："
@@ -828,6 +829,7 @@ InstallRPM() {
         yum groupinstall -y "X Window System"
         yum groupinstall -y "Desktop"
         yum install -y nautilus-open-terminal
+        yum install -y tigervnc*
       fi
       if [ "$(rpm -q bc binutils compat-libcap1 compat-libstdc++-33 gcc gcc-c++ elfutils-libelf elfutils-libelf-devel glibc glibc-devel libaio libaio-devel libgcc libstdc++ libstdc++-devel libxcb libX11 libXau libXi libXrender make net-tools smartmontools sysstat e2fsprogs e2fsprogs-libs expect unzip openssh-clients readline psmisc ksh nfs-utils --qf '%{name}.%{arch}\n' | grep -E -c "not installed")" -gt 0 ]; then
         yum install -y bc \
@@ -867,6 +869,7 @@ InstallRPM() {
       if [ "${TuXingHua}" = "y" ] || [ "${TuXingHua}" = "Y" ]; then
         #LINUX 7
         yum groupinstall -y "Server with GUI"
+        yum install -y tigervnc*
       fi
       if [ "$(rpm -q bc binutils compat-libcap1 compat-libstdc++-33 gcc gcc-c++ elfutils-libelf elfutils-libelf-devel glibc glibc-devel ksh libaio libaio-devel libgcc libstdc++ libstdc++-devel libxcb libX11 libXau libXi libXtst libXrender libXrender-devel make net-tools nfs-utils smartmontools sysstat e2fsprogs e2fsprogs-libs fontconfig-devel expect unzip openssh-clients readline psmisc --qf '%{name}.%{arch}\n' | grep -E -c "not installed")" -gt 0 ]; then
         yum install -y bc \
