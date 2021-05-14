@@ -249,15 +249,6 @@ help() {
   c1 "Excute: " green
   c1 "1.chmod +x OracleShellInstall.sh" green
   echo
-  c1 "2.How to Excute the script:" green
-  c1 "./OracleShellInstall.sh -i 192.168.56.120" blue
-  c1 "or" green
-  c1 "./OracleShellInstall.sh -i 192.168.56.120 -n orcl -o orcl -c TRUE -pb pdb01 -op oracle -b /u01/app -s AL32UTF8" blue
-  echo
-  c1 "3.How to Install Rac:" green
-  c1 "Excute on Node 1" red
-  c1 "./OracleShellInstall.sh -i 192.168.56.101 -n lucifer02 -o orcl -pb1 192.168.56.100 -pb2 192.168.56.101 -vi1 192.168.56.102 -vi2 192.168.56.103 -pi1 10.10.1.1 -pi2 10.10.1.2 -si 192.168.56.105 -sn lucifer-scan -cn lucifer-cluster -dd /dev/asm_data -od /dev/asm_ocr -puf eth0 -prf eth1" blue
-  echo
   c1 "OPTIONS: " green
   c1 "-i,		--PUBLICIP			PUBLICIP NETWORK ADDRESS" green
   c1 "-n,		--HOSTNAME			HOSTNAME(orcl)" green
@@ -291,7 +282,7 @@ help() {
   c1 "-txh            --TuXingHua                     Tu Xing Hua Install" green
   c1 "-udev           --UDEV                          Whether Auto Set UDEV" green
   c1 "-dns            --DNS                           RAC CONFIGURE DNS(Y|N)" green
-  c1 "-dnss            --DNSSERVER                    RAC CONFIGURE DNSSERVER LOCAL(Y|N)" green
+  c1 "-dnss           --DNSSERVER                     RAC CONFIGURE DNSSERVER LOCAL(Y|N)" green
   c1 "-dnsn           --DNSNAME                       RAC DNSNAME(orcl.com)" green
   c1 "-dnsi           --DNSIP                         RAC DNS IP" green
   c1 "-m,		--ONLYCONFIGOS			ONLY CONFIG SYSTEM PARAMETER(Y|N)" green
@@ -542,7 +533,7 @@ fi
 
 if [ "${nodeNum}" -eq 1 ]; then
   echo
-  c1 "Please Choose Oracle Install Mode(RAC/SINGLE/HA) :" blue
+  c1 "Please Choose Oracle Install Mode(single/restart/rac) :" blue
   echo
   read -r OracleInstallMode
   echo
@@ -795,7 +786,7 @@ if [ "${OracleInstallMode}" = "RAC" ] || [ "${OracleInstallMode}" = "rac" ]; the
     c1 "Node Number Input Error, exit" red
     exit
   fi
-elif [ "${OracleInstallMode}" = "ha" ] || [ "${OracleInstallMode}" = "HA" ]; then
+elif [ "${OracleInstallMode}" = "restart" ] || [ "${OracleInstallMode}" = "RESTART" ]; then
   hostname=${HOSTNAME}
   PublicIP=${PUBLICIP}
   ORACLE_SIDTemp=${ORACLE_SID}
@@ -807,7 +798,7 @@ else
 fi
 
 ##get scanname and clustername
-if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ] || [ "${OracleInstallMode}" = "ha" ] || [ "${OracleInstallMode}" = "HA" ]; then
+if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ] || [ "${OracleInstallMode}" = "restart" ] || [ "${OracleInstallMode}" = "RESTART" ]; then
   RACSCANNAME=${HOSTNAME}-scan
   CLUSTERNAME=${HOSTNAME}-cluster
 fi
@@ -1359,7 +1350,7 @@ CreateUsersAndDirs() {
     /usr/sbin/groupadd -g 54330 racdba
   fi
 
-  if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ] || [ "${OracleInstallMode}" = "ha" ] || [ "${OracleInstallMode}" = "HA" ]; then
+  if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ] || [ "${OracleInstallMode}" = "restart" ] || [ "${OracleInstallMode}" = "RESTART" ]; then
     if [ "$(grep -E -c "asmdba" /etc/group)" -eq 0 ]; then
       /usr/sbin/groupadd -g 54327 asmdba
     fi
@@ -1389,7 +1380,7 @@ CreateUsersAndDirs() {
     logwrite "Create user and groups(grid)" "id grid"
   fi
 
-  if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ] || [ "${OracleInstallMode}" = "ha" ] || [ "${OracleInstallMode}" = "HA" ]; then
+  if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ] || [ "${OracleInstallMode}" = "restart" ] || [ "${OracleInstallMode}" = "RESTART" ]; then
     ##Create oracle user with RAC
     if [ "$(grep -E -c "oracle" /etc/passwd)" -eq 0 ]; then
       if ! /usr/sbin/useradd -u 54321 -g oinstall -G asmdba,dba,backupdba,dgdba,kmdba,racdba,oper oracle; then
@@ -1422,7 +1413,7 @@ CreateUsersAndDirs() {
   ####################################################################################
   #make directory
   ####################################################################################
-  if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ] || [ "${OracleInstallMode}" = "ha" ] || [ "${OracleInstallMode}" = "HA" ]; then
+  if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ] || [ "${OracleInstallMode}" = "restart" ] || [ "${OracleInstallMode}" = "RESTART" ]; then
     [ ! -d "${ENV_GRID_BASE}" ] && mkdir -p "${ENV_GRID_BASE}"
     [ ! -d "${ENV_GRID_HOME}" ] && mkdir -p "${ENV_GRID_HOME}"
     [ ! -d "${ENV_ORACLE_HOME}" ] && mkdir -p "${ENV_ORACLE_HOME}"
@@ -1668,7 +1659,7 @@ EOF
   fi
   cd "${SOFTWAREDIR}" || return
   for i in /dev/asm_data*; do
-    if [ "${OracleInstallMode}" = "ha" ] || [ "${OracleInstallMode}" = "HA" ]; then
+    if [ "${OracleInstallMode}" = "restart" ] || [ "${OracleInstallMode}" = "RESTART" ]; then
       echo -n "${i}", >>data_temp
       echo -n "${i}",, >>data_fail_temp
       DATAFailureDISK=$(cat data_fail_temp)
@@ -1948,7 +1939,7 @@ EOF
   fi
   if [ "$(grep -E -c "#OracleBegin" /etc/security/limits.conf)" -eq 0 ]; then
     [ ! -f /etc/security/limits.conf."${DAYTIME}" ] && cp /etc/security/limits.conf /etc/security/limits.conf."${DAYTIME}"
-    if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ] || [ "${OracleInstallMode}" = "ha" ] || [ "${OracleInstallMode}" = "HA" ]; then
+    if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ] || [ "${OracleInstallMode}" = "restart" ] || [ "${OracleInstallMode}" = "RESTART" ]; then
       cat <<EOF >>/etc/security/limits.conf
 #OracleBegin
 oracle soft nofile 1024
@@ -2039,7 +2030,7 @@ EOF
 alias so='su - oracle'
 export PS1="[\`whoami\`@\`hostname\`:"'\$PWD]\$ '
 EOF
-    if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ] || [ "${OracleInstallMode}" = "ha" ] || [ "${OracleInstallMode}" = "HA" ]; then
+    if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ] || [ "${OracleInstallMode}" = "restart" ] || [ "${OracleInstallMode}" = "RESTART" ]; then
       cat <<EOF >>${root_profile}
 alias crsctl='${ENV_GRID_HOME}/bin/crsctl'
 alias sg='su - grid'
@@ -2116,7 +2107,7 @@ EOF
   logwrite "Oracle Profile" "cat /home/oracle/.bash_profile"
 
   ##GRID:
-  if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ] || [ "${OracleInstallMode}" = "ha" ] || [ "${OracleInstallMode}" = "HA" ]; then
+  if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ] || [ "${OracleInstallMode}" = "restart" ] || [ "${OracleInstallMode}" = "RESTART" ]; then
     if [ "$(grep -E -c "#OracleBegin" /home/grid/.bash_profile)" -eq 0 ]; then
       cat <<EOF >>/home/grid/.bash_profile
 ################OracleBegin#########################
@@ -2708,7 +2699,7 @@ oracle.install.crs.config.networkInterfaceList=$RACPUBLICFCNAME:${RAC1PUBLICIP%.
 EOF
       fi
     fi
-  elif [ "${OracleInstallMode}" = "ha" ] || [ "${OracleInstallMode}" = "HA" ]; then
+  elif [ "${OracleInstallMode}" = "restart" ] || [ "${OracleInstallMode}" = "RESTART" ]; then
     if [ ${DB_VERSION} = 11.2.0.4 ]; then
       cat <<EOF >>"${SOFTWAREDIR}"/grid.rsp
 oracle.install.responseFileVersion=/oracle/install/rspfmt_crsinstall_response_schema_v11_2_0
@@ -3127,7 +3118,7 @@ EOF
       rm -rf /home/grid/cfgrsp.properties
     fi
     ## How to Use ASMCA in Silent Mode to Configure ASM For a Stand-Alone Server (Doc ID 1068788.1)
-    if [ "${OracleInstallMode}" = "ha" ] || [ "${OracleInstallMode}" = "HA" ]; then
+    if [ "${OracleInstallMode}" = "restart" ] || [ "${OracleInstallMode}" = "RESTART" ]; then
       if [ "$(pgrep -f "asm_smon_+ASM" | wc -l)" -eq 0 ]; then
         su - grid -c "$ENV_GRID_HOME/bin/asmca -silent -sysAsmPassword ${GRIDPASSWD} -asmsnmpPassword ${GRIDPASSWD} -oui_internal -configureASM -diskString '/dev/asm*' -diskGroupName ${ASMDATANAME} -diskList ${DATADISK} -redundancy ${DATAREDUN} -au_size 1"
       fi
@@ -3556,7 +3547,7 @@ EOF
     fi
 
     ## RAC
-    if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ] || [ "${OracleInstallMode}" = "ha" ] || [ "${OracleInstallMode}" = "HA" ]; then
+    if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ] || [ "${OracleInstallMode}" = "restart" ] || [ "${OracleInstallMode}" = "RESTART" ]; then
       if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ]; then
         ## scp OPatch
         if [ "${DB_VERSION}" = "11.2.0.4" ] || [ "${DB_VERSION}" = "12.2.0.1" ]; then
@@ -3612,7 +3603,7 @@ EOF
   logwrite "OPatch lspatches" "su - oracle -c \"opatch lspatches\""
   ## If SOFTWAREDIR is empty, this will end up deleting everything in the system's root directory.("${SOFTWAREDIR}/"*)
   ## Using :? will cause the command to fail if the variable is null or unset. Similarly, you can use :- to set a default value if applicable
-  if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ] || [ "${OracleInstallMode}" = "ha" ] || [ "${OracleInstallMode}" = "HA" ]; then
+  if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ] || [ "${OracleInstallMode}" = "restart" ] || [ "${OracleInstallMode}" = "RESTART" ]; then
     if [ -d "/${SOFTWAREDIR}/""${GPATCH}" ] && [ -n "${GPATCH}" ]; then
       cd ~ || return
       rm -rf "/${SOFTWAREDIR:?}/""${GPATCH}"
@@ -3682,7 +3673,7 @@ createDB() {
         c1 "Sorry, Database Create Failed." red
         exit 99
       fi
-    elif [ "${OracleInstallMode}" = "ha" ] || [ "${OracleInstallMode}" = "HA" ]; then
+    elif [ "${OracleInstallMode}" = "restart" ] || [ "${OracleInstallMode}" = "RESTART" ]; then
       if ! su - oracle -c "dbca -silent -createDatabase -templateName General_Purpose.dbc -gdbName ${ORACLE_SID} -sid ${ORACLE_SID} -sysPassword oracle -systemPassword oracle -asmsnmpPassword oracle -datafileDestination ${ASMDATANAME} -redoLogFileSize 120 -recoveryAreaDestination ${ASMDATANAME} -storageType ASM  -sampleSchema true -responseFile NO_VALUE -characterSet ${CHARACTERSET} -nationalCharacterSet AL16UTF16 -continueOnNonFatalErrors false -disableSecurityConfiguration ALL -diskGroupName ${ASMDATANAME} -emConfiguration NONE -listeners LISTENER -automaticMemoryManagement false -totalMemory ${totalMemory} -databaseType OLTP"; then
         c1 "Sorry, Database Create Failed." red
         exit 99
@@ -3705,7 +3696,7 @@ createDB() {
         c1 "Sorry, Database Create Failed." red
         exit 99
       fi
-    elif [ "${OracleInstallMode}" = "ha" ] || [ "${OracleInstallMode}" = "HA" ]; then
+    elif [ "${OracleInstallMode}" = "restart" ] || [ "${OracleInstallMode}" = "RESTART" ]; then
       ASMDATANAME="+${ASMDATANAME}"
       if [ "${DB_VERSION}" = "12.2.0.1" ]; then
         ## 12.2 Oracle Restart: LFI-00133 LFI-01517 occurred when using srvctl (Doc ID 2387137.1)
@@ -3741,7 +3732,7 @@ DBParaSet() {
     cd ~ || return
     rm -rf /home/oracle/*.sql
   fi
-  if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ] || [ "${OracleInstallMode}" = "ha" ] || [ "${OracleInstallMode}" = "HA" ]; then
+  if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ] || [ "${OracleInstallMode}" = "restart" ] || [ "${OracleInstallMode}" = "RESTART" ]; then
     if [ "${DB_VERSION}" = "12.2.0.1" ] || [ "${DB_VERSION}" = "18.0.0.0" ] || [[ "${DB_VERSION}" == "19.3.0.0" ]]; then
       cat <<EOF >/home/oracle/oracleParaset.sql
 --set db_create_file_dest
@@ -3827,7 +3818,7 @@ EOF
   if [ "$(grep -E -c "#OracleBegin" /etc/oratab)" -eq 0 ]; then
     [ ! -f /etc/oratab."${DAYTIME}" ] && cp /etc/oratab /etc/oratab."${DAYTIME}"
     sed -i 's/db:N/db:Y/' /etc/oratab
-    if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ] || [ "${OracleInstallMode}" = "ha" ] || [ "${OracleInstallMode}" = "HA" ]; then
+    if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ] || [ "${OracleInstallMode}" = "restart" ] || [ "${OracleInstallMode}" = "RESTART" ]; then
       if [ "${DB_VERSION}" = "11.2.0.4" ]; then
         "${ENV_GRID_HOME}"/bin/crsctl modify resource "ora.${ORACLE_SID}.db" -attr "AUTO_START=always"
       elif [ "${DB_VERSION}" = "12.2.0.1" ] || [ "${DB_VERSION}" = "18.0.0.0" ] || [[ "${DB_VERSION}" == "19.3.0.0" ]]; then
@@ -4143,7 +4134,7 @@ elif [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ]; t
       fi
     fi
   fi
-elif [ "${OracleInstallMode}" = "ha" ] || [ "${OracleInstallMode}" = "HA" ]; then
+elif [ "${OracleInstallMode}" = "restart" ] || [ "${OracleInstallMode}" = "RESTART" ]; then
   #For HA
   SwapCheck
   InstallRPM
