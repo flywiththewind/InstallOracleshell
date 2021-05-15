@@ -17,6 +17,11 @@
 
 ##### 操作系统版本： Linux6(x86_64)、Linux7(x86_64)。
 
+```
+##19C 操作系统要求
+Red Hat Enterprise Linux 8: 4.18.0-80.el8.x86_64 or later
+Red Hat Enterprise Linux 7.5: 3.10.0-862.11.6.el7.x86_64 or later
+```
 ##### 包括Single、Oracle Restart、Oracle Real Cluster模式。
 <font color='red'>***目前RAC只支持双节点安装。***</font>
 
@@ -180,7 +185,6 @@ cd /soft
 -pb1 10.211.55.100 -pb2 10.211.55.101 `# node public ip`\
 -vi1 10.211.55.102 -vi2 10.211.55.103 `# node virtual ip`\
 -pi1 10.10.1.1 -pi2 10.10.1.2 `# node private ip`\
--pi3 1.1.1.1 -pi4 1.1.1.2 `# node private ip`\
 -puf eth0 -prf eth1 `# network fcname`\
 -si 10.211.55.105 `# scan ip`\
 -dd /dev/sde,/dev/sdf `# asm data disk`\

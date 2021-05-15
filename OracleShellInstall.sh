@@ -4,7 +4,7 @@ echo "##Author 	: LuciferLiu"
 echo "##Blog   	: https://blog.csdn.net/m0_50546016"
 echo "##Github        : https://github.com/pc-study/InstallOracleshell"
 echo "##Version	: 1.0"
-echo "##Function   	: Oracle 11g/12c/18c/19c(Single and Rac) install on Linux 6/7"
+echo "##Function   	: Oracle 11g/12c/18c/19c(Single and Rac) install on Linux 6/7/8"
 echo "####################################################################################"
 echo "#执行脚本前："
 echo "#    1. 把脚本放入软件目录，例如：/soft"
@@ -660,6 +660,8 @@ if [ "$OS_VER_PRI" -eq 7 ]; then
   OS_VERSION=linux7
 elif [ "$OS_VER_PRI" -eq 6 ]; then
   OS_VERSION=linux6
+elif [ "$OS_VER_PRI" -eq 8 ]; then
+  OS_VERSION=linux8
 else
   c1 "sorry, this operating system is not supported!!!" red
   exit 99
@@ -865,9 +867,9 @@ InstallRPM() {
           ksh \
           nfs-utils --skip-broken
       fi
-    elif [ "${OS_VERSION}" = "linux7" ]; then
+    elif [ "${OS_VERSION}" = "linux7" ] || [ "${OS_VERSION}" = "linux8" ]; then
       if [ "${TuXingHua}" = "y" ] || [ "${TuXingHua}" = "Y" ]; then
-        #LINUX 7
+        #LINUX 7 && LINUX 8
         yum groupinstall -y "Server with GUI"
         yum install -y tigervnc*
       fi
@@ -957,12 +959,14 @@ EOF
           fi
         fi
       fi
-      if rpm -ivh "${SOFTWAREDIR}"/compat-libstdc++-33-3.2.3-72.el7.x86_64.rpm; then
-        if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ]; then
-          scp "${SOFTWAREDIR}"/compat-libstdc++-33-3.2.3-72.el7.x86_64.rpm "${RAC2PUBLICIP}":/root
-          ssh "$RAC2PUBLICIP" rpm -ivh /root/compat-libstdc++-33-3.2.3-72.el7.x86_64.rpm
+      if [ -f "${SOFTWAREDIR}"/compat-libstdc++-33-3.2.3-72.el7.x86_64.rpm ]; then
+        if rpm -ivh "${SOFTWAREDIR}"/compat-libstdc++-33-3.2.3-72.el7.x86_64.rpm; then
+          if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ]; then
+            scp "${SOFTWAREDIR}"/compat-libstdc++-33-3.2.3-72.el7.x86_64.rpm "${RAC2PUBLICIP}":/root
+            ssh "$RAC2PUBLICIP" rpm -ivh /root/compat-libstdc++-33-3.2.3-72.el7.x86_64.rpm
+          fi
+          rm -rf "${SOFTWAREDIR}"/compat-libstdc++-33-3.2.3-72.el7.x86_64.rpm
         fi
-        rm -rf "${SOFTWAREDIR}"/compat-libstdc++-33-3.2.3-72.el7.x86_64.rpm
       fi
     fi
   fi
@@ -982,7 +986,7 @@ EOF
 
   if [ "${OS_VERSION}" = "linux6" ]; then
     logwrite "RPM Check" "rpm -q bc binutils compat-libcap1 compat-libstdc++-33 gcc gcc-c++ elfutils-libelf elfutils-libelf-devel glibc glibc-devel libaio libaio-devel libgcc libstdc++ libstdc++-devel libxcb libX11 libXau libXi libXrender make net-tools smartmontools sysstat e2fsprogs e2fsprogs-libs expect unzip openssh-clients readline"
-  elif [ "${OS_VERSION}" = "linux7" ]; then
+  elif [ "${OS_VERSION}" = "linux7" ] || [ "${OS_VERSION}" = "linux8" ]; then
     logwrite "RPM Check" "rpm -q bc binutils compat-libcap1 compat-libstdc++-33 gcc gcc-c++ elfutils-libelf elfutils-libelf-devel glibc glibc-devel ksh libaio libaio-devel libgcc libstdc++ libstdc++-devel libxcb libX11 libXau libXi libXtst libXrender libXrender-devel make net-tools nfs-utils smartmontools sysstat e2fsprogs e2fsprogs-libs fontconfig-devel expect unzip openssh-clients readline"
   fi
 }
@@ -997,7 +1001,7 @@ SetHostName() {
       /bin/hostname "$hostname"
       sed -i "s/${Hostname}/HOSTNAME=${hostname}/" /etc/sysconfig/network
     fi
-  elif [ "${OS_VERSION}" = "linux7" ]; then
+  elif [ "${OS_VERSION}" = "linux7" ] || [ "${OS_VERSION}" = "linux8" ]; then
     if [[ $(grep -E "${hostname}" /etc/hostname) != "${hostname}" ]]; then
       /usr/bin/hostnamectl set-hostname "${hostname}"
     fi
@@ -1096,7 +1100,7 @@ DNSServerConf() {
   yum install -y bind-libs bind bind-utils
   if [ "${OS_VERSION}" = "linux6" ]; then
     chkconfig named on
-  elif [ "${OS_VERSION}" = "linux7" ]; then
+  elif [ "${OS_VERSION}" = "linux7" ] || [ "${OS_VERSION}" = "linux8" ]; then
     systemctl enable named
   fi
   if [ "$nodeNum" -eq 1 ]; then
@@ -1444,7 +1448,7 @@ CreateUsersAndDirs() {
   ## Judge DISK SPACE
   if [ "${OS_VERSION}" = "linux6" ]; then
     BASEDIR_SPACE=$(df "${ENV_BASE_DIR}" | tail -n 1 | awk '{printf $3}')
-  elif [ "${OS_VERSION}" = "linux7" ]; then
+  elif [ "${OS_VERSION}" = "linux7" ] || [ "${OS_VERSION}" = "linux8" ]; then
     BASEDIR_SPACE=$(df "${ENV_BASE_DIR}" | tail -n 1 | awk '{printf $4}')
   fi
   BASEDIR_SPACE=$((BASEDIR_SPACE / 1024 / 1024))
@@ -1530,7 +1534,7 @@ EOF
   alias ocr_${num1}
   }
 EOF
-    elif [ "${OS_VERSION}" = "linux7" ]; then
+    elif [ "${OS_VERSION}" = "linux7" ] || [ "${OS_VERSION}" = "linux8" ]; then
       cat <<EOF >>/etc/multipath.conf
   multipath {
   wwid "$(/usr/lib/udev/scsi_id -g -u "${i}")"
@@ -1579,7 +1583,7 @@ EOF
   alias data_${num2}
   }
 EOF
-    elif [ "${OS_VERSION}" = "linux7" ]; then
+    elif [ "${OS_VERSION}" = "linux7" ] || [ "${OS_VERSION}" = "linux8" ]; then
       cat <<EOF >>/etc/multipath.conf
   multipath {
   wwid "$(/usr/lib/udev/scsi_id -g -u "${i}")"
@@ -1622,7 +1626,7 @@ EOF
 
   if [ "${OS_VERSION}" = "linux6" ]; then
     start_udev
-  elif [ "${OS_VERSION}" = "linux7" ]; then
+  elif [ "${OS_VERSION}" = "linux7" ] || [ "${OS_VERSION}" = "linux8" ]; then
     udevadm control --reload-rules
     udevadm trigger --type=devices
   fi
@@ -1711,7 +1715,7 @@ EOF
     logwrite "ntpd" "service ntpd status"
 
     [ -f /etc/ntp.conf ] && mv /etc/ntp.conf /etc/ntp.conf.orig
-  elif [ "${OS_VERSION}" = "linux7" ]; then
+  elif [ "${OS_VERSION}" = "linux7" ] || [ "${OS_VERSION}" = "linux8" ]; then
     timedatectl set-timezone Asia/Shanghai
     if [ "$(systemctl status chronyd | grep -c running)" -gt 0 ]; then
       systemctl stop chronyd.service
@@ -1755,15 +1759,15 @@ Disableavahi() {
     fi
     logwrite "avahi-daemon" "service avahi-daemon  status"
 
-  elif [ "${OS_VERSION}" = "linux7" ]; then
+  elif [ "${OS_VERSION}" = "linux7" ] || [ "${OS_VERSION}" = "linux8" ]; then
     yum install -y avahi*
     if [ "$(systemctl status avahi-daemon | grep -c running)" -gt 0 ]; then
       systemctl stop avahi-daemon.socket
-      systemctl disable avahi-daemon.socket
       systemctl stop avahi-daemon.service
-      systemctl disable avahi-daemon.service
       pgrep -f avahi-daemon | awk '{print "kill -9 "$2}'
     fi
+    systemctl disable avahi-daemon.service
+    systemctl disable avahi-daemon.socket
     logwrite "avahi-daemon" "systemctl status avahi-daemon"
   fi
 }
@@ -1780,7 +1784,7 @@ DisableFirewall() {
       chkconfig ip6tables off
     fi
     logwrite "Iptables" "service iptables status"
-  elif [ "${OS_VERSION}" = "linux7" ]; then
+  elif [ "${OS_VERSION}" = "linux7" ] || [ "${OS_VERSION}" = "linux8" ]; then
     if [ "$(systemctl status firewalld.service | grep -c running)" -gt 0 ]; then
       systemctl stop firewalld.service
       systemctl disable firewalld.service
@@ -1824,7 +1828,7 @@ EOF
       sed -i 's/quiet/quiet numa=off/' /boot/grub/grub.conf
     fi
     logwrite "/boot/grub/grub.conf" "cat /boot/grub/grub.conf"
-  elif [ "${OS_VERSION}" = "linux7" ]; then
+  elif [ "${OS_VERSION}" = "linux7" ] || [ "${OS_VERSION}" = "linux8" ]; then
     if [ "$(grep -E -c "transparent_hugepage=never numa=off" /etc/default/grub)" -eq 0 ]; then
       [ ! -f /etc/default/grub."${DAYTIME}" ] && cp /etc/default/grub /etc/default/grub."${DAYTIME}"
       sed -i 's/quiet/quiet transparent_hugepage=never numa=off/' /etc/default/grub
@@ -1849,7 +1853,7 @@ DisableNetworkManager() {
       service NetworkManager off
     fi
     logwrite "NetworkManager" "service NetworkManager status"
-  elif [ "${OS_VERSION}" = "linux7" ]; then
+  elif [ "${OS_VERSION}" = "linux7" ] || [ "${OS_VERSION}" = "linux8" ]; then
     #Turn off the NetworkManager(Linux 7)
     if [ "$(systemctl status NetworkManager.service | grep -c running)" -gt 0 ]; then
       systemctl stop NetworkManager.service
@@ -1926,7 +1930,7 @@ EOF
   ####################################################################################
   # Edit limits.conf
   ####################################################################################
-  if [ "${OS_VERSION}" = "linux7" ]; then
+  if [ "${OS_VERSION}" = "linux7" ] || [ "${OS_VERSION}" = "linux8" ]; then
     sed -i 's/*          soft    nproc     4096/*          -       nproc     16384/g' /etc/security/limits.d/20-nproc.conf
     logwrite "/etc/security/limits.d/20-nproc.conf" "cat /etc/security/limits.d/20-nproc.conf | grep -v \"^\$\"|grep -v \"^#\""
   fi
@@ -2036,7 +2040,7 @@ EOF
 EOF
     fi
   fi
-  logwrite "ROOT Profile" "cat ${root_profile}"
+  logwrite "ROOT Profile" "cat ${root_profile} | grep -v \"^\$\"|grep -v \"^#\""
 
   ##ORALCE:
   if [ "$(grep -E -c "#OracleBegin" /home/oracle/.bash_profile)" -eq 0 ]; then
@@ -2098,7 +2102,7 @@ EOF
       sed -i "s#ORACLE_HOME=${oracleHome}#ORACLE_HOME=${ENV_ORACLE_HOME}#" /home/oracle/.bash_profile
     fi
   fi
-  logwrite "Oracle Profile" "cat /home/oracle/.bash_profile"
+  logwrite "Oracle Profile" "cat /home/oracle/.bash_profile | grep -v \"^\$\"|grep -v \"^#\""
 
   ##GRID:
   if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ] || [ "${OracleInstallMode}" = "restart" ] || [ "${OracleInstallMode}" = "RESTART" ]; then
@@ -2136,7 +2140,7 @@ EOF
 EOF
       fi
     fi
-    logwrite "Grid Profile" "cat /home/grid/.bash_profile"
+    logwrite "Grid Profile" "cat /home/grid/.bash_profile | grep -v \"^\$\"|grep -v \"^#\""
   fi
 }
 
@@ -2254,7 +2258,7 @@ UnzipGridSoft() {
         if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ]; then
           scp "${ENV_GRID_HOME}"/cv/rpm/cvuqdisk-1.0.10-1.rpm "$RAC2HOSTNAME":"${SOFTWAREDIR}"
           ssh "$RAC2HOSTNAME" rpm -ivh "${SOFTWAREDIR}"/cvuqdisk-1.0.10-1.rpm
-          ssh "$RAC2HOSTNAME" rm -rf "${SOFTWAREDIR}"/cvuqdisk-1.0.9-1.rpm
+          ssh "$RAC2HOSTNAME" rm -rf "${SOFTWAREDIR}"/cvuqdisk-1.0.10-1.rpm
         fi
       else
         c1 "Make sure the cvuqdisk installation package is in the ${ENV_GRID_HOME}/cv/rpm directory:" red
@@ -2290,11 +2294,19 @@ Runcluvfy() {
     fi
   elif [[ "${DB_VERSION}" == "12.2.0.1" ]] || [[ "${DB_VERSION}" == "18.0.0.0" ]]; then
     if [ -f "${ENV_GRID_HOME}"/runcluvfy.sh ]; then
-      su - grid -c "${ENV_GRID_HOME}/runcluvfy.sh stage -pre crsinst -n $RAC1HOSTNAME,$RAC2HOSTNAME -fixup -verbose" | tee "${SOFTWAREDIR}"/runcluvfy.out
       # /tmp/$cvufix/runfixup.sh
       # if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ]; then
       #     ssh "$RAC2HOSTNAME" /tmp/$cvufix/runfixup.sh
       # fi
+      EXPECT=/usr/bin/expect
+      USER_PROMPT="*# "
+      $EXPECT <<EOF
+      su - grid -c "${ENV_GRID_HOME}/runcluvfy.sh stage -pre crsinst -n $RAC1HOSTNAME,$RAC2HOSTNAME -fixup -verbose  -method root" | tee "${SOFTWAREDIR}"/runcluvfy.out
+      expect "*password*" {
+        send -- "$ROOTPASSWD\r"
+    } "*?assword:*" {send -- "$ROOTPASSWD\r"}
+expect "$USER_PROMPT"
+EOF
     fi
   elif [[ "${DB_VERSION}" == "19.3.0.0" ]]; then
     if [ -f "${ENV_GRID_HOME}"/runcluvfy.sh ]; then
@@ -3501,6 +3513,11 @@ EOF
 
   fi
 
+  if [ -d "/${SOFTWAREDIR}/"database ]; then
+    cd ~ || return
+    rm -rf "/${SOFTWAREDIR:?}/"database
+  fi
+
   if [ -f "${ENV_ORACLE_INVEN}"/orainstRoot.sh ] || [ -f "${ENV_ORACLE_HOME}"/root.sh ]; then
     if [ -f "${ENV_ORACLE_INVEN}"/orainstRoot.sh ]; then
       "${ENV_ORACLE_INVEN}"/orainstRoot.sh
@@ -3606,16 +3623,14 @@ EOF
     if [ -d "/${SOFTWAREDIR}/""${GPATCH}" ] && [ -n "${GPATCH}" ]; then
       cd ~ || return
       rm -rf "/${SOFTWAREDIR:?}/""${GPATCH}"
+      ssh "$RAC2HOSTNAME" "/${SOFTWAREDIR:?}/""${GPATCH}"
     fi
   else
     if [ -d "/${SOFTWAREDIR}/""${OPATCH}" ] && [ -n "${OPATCH}" ]; then
       cd ~ || return
       rm -rf "/${SOFTWAREDIR:?}/""${OPATCH}"
+      ssh "$RAC2HOSTNAME" "/${SOFTWAREDIR:?}/""${OPATCH}"
     fi
-  fi
-  if [ -d "/${SOFTWAREDIR}/"database ]; then
-    cd ~ || return
-    rm -rf "/${SOFTWAREDIR:?}/"database
   fi
 }
 
