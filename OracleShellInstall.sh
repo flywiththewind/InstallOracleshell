@@ -816,13 +816,28 @@ InstallRPM() {
     exit 99
   else
     if [ ! -f /etc/yum.repos.d/local.repo ]; then
-      {
-        echo "[server]"
-        echo "name=server"
-        echo "baseurl=file://""${mountPatch}"
-        echo "enabled=1"
-        echo "gpgcheck=1"
-      } >/etc/yum.repos.d/local.repo
+      if [ "${OS_VERSION}" = "linux6" ] || [ "${OS_VERSION}" = "linux7" ]; then
+        {
+          echo "[server]"
+          echo "name=server"
+          echo "baseurl=file://""${mountPatch}"
+          echo "enabled=1"
+          echo "gpgcheck=1"
+        } >/etc/yum.repos.d/local.repo
+      elif [ "${OS_VERSION}" = "linux8" ]; then
+        {
+          echo "[BaseOS]"
+          echo "name=BaseOS"
+          echo "baseurl=file:///${mountPatch}/BaseOS"
+          echo "enabled=1"
+          echo "gpgcheck=1"
+          echo "[AppStream]"
+          echo "name=AppStream"
+          echo "baseurl=file:///${mountPatch}/AppStream"
+          echo "enabled=1"
+          echo "gpgcheck=1"
+        } >/etc/yum.repos.d/local.repo
+      fi
       rpm --import "${mountPatch}"/RPM-GPG-KEY-redhat-release
     fi
     if [ "${OS_VERSION}" = "linux6" ]; then
@@ -1726,19 +1741,34 @@ EOF
   fi
   ##ntpdate configure
   if [[ -n "${TIMESERVERIP}" ]]; then
-    yum install -y ntpdate
-    if [ ! -f /var/spool/cron/root ]; then
-      echo "##For ntpupdate" >>/var/spool/cron/root
+    if [ "${OS_VERSION}" = "linux6" ] || [ "${OS_VERSION}" = "linux7" ]; then
+      yum install -y ntpdate
+      if [ ! -f /var/spool/cron/root ]; then
+        echo "##For ntpupdate" >>/var/spool/cron/root
+      fi
+      if [ "$(grep -E -c "#OracleBegin" /var/spool/cron/root)" -eq 0 ]; then
+        [ ! -f /var/spool/cron/root."${DAYTIME}" ] && cp /var/spool/cron/root /var/spool/cron/root."${DAYTIME}" >/dev/null 2>&1
+        {
+          echo "#OracleBegin"
+          echo "00 12 * * * /usr/sbin/ntpdate -u ${TIMESERVERIP} && /usr/sbin/hwclock -w"
+          echo "#OracleEnd"
+        } >>/var/spool/cron/root
+      fi
+      /usr/sbin/ntpdate -u "${TIMESERVERIP}" && /usr/sbin/hwclock -w
+    elif [ "${OS_VERSION}" = "linux8" ]; then
+      if [ ! -f /var/spool/cron/root ]; then
+        echo "##For ntpupdate" >>/var/spool/cron/root
+      fi
+      if [ "$(grep -E -c "#OracleBegin" /var/spool/cron/root)" -eq 0 ]; then
+        [ ! -f /var/spool/cron/root."${DAYTIME}" ] && cp /var/spool/cron/root /var/spool/cron/root."${DAYTIME}" >/dev/null 2>&1
+        {
+          echo "#OracleBegin"
+          echo "00 12 * * * /usr/sbin/chronyd -q "server "${TIMESERVERIP}" iburst" && timedatectl set-local-rtc true"
+          echo " #OracleEnd"
+        } >>/var/spool/cron/root
+      fi
+      chronyd -q "server ${TIMESERVERIP} iburst" && timedatectl set-local-rtc true
     fi
-    if [ "$(grep -E -c "#OracleBegin" /var/spool/cron/root)" -eq 0 ]; then
-      [ ! -f /var/spool/cron/root."${DAYTIME}" ] && cp /var/spool/cron/root /var/spool/cron/root."${DAYTIME}" >/dev/null 2>&1
-      {
-        echo "#OracleBegin"
-        echo "00 12 * * * /usr/sbin/ntpdate -u ${TIMESERVERIP} && /usr/sbin/hwclock -w"
-        echo "#OracleEnd"
-      } >>/var/spool/cron/root
-    fi
-    /usr/sbin/ntpdate -u "${TIMESERVERIP}" && /usr/sbin/hwclock -w
     logwrite "Time ntpdate" "crontab -l"
   fi
 
