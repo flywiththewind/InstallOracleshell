@@ -235,7 +235,7 @@ RAC模式自动配置节点间互信
 #### 3.7 配置时间同步crontab
 
 ```shellscript
--ts 10.211.55.18 `# timeserver` \
+-tsi 10.211.55.18 `# timeserver` \
 ```
 
 #### 3.8 自动安装补丁（PSU,RU,RUR）

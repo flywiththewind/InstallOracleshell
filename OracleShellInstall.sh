@@ -60,7 +60,7 @@ OCRREDUN=EXTERNAL
 DATAREDUN=EXTERNAL
 num1=0
 num2=0
-TIMESERVER=
+TIMESERVERIP=
 ONLYCONFIGOS=N
 ONLYINSTALLGRID=N
 ONLYINSTALLORACLE=N
@@ -279,7 +279,7 @@ help() {
   c1 "-od,		--OCRP_BASEDISK			RAC OCRDISK DISKNAME" green
   c1 "-or,		--OCRREDUN			RAC OCR REDUNDANCY(EXTERNAL|NORMAL|HIGH)" green
   c1 "-dr,		--DATAREDUN			RAC DATA REDUNDANCY(EXTERNAL|NORMAL|HIGH)" green
-  c1 "-ts,            --TIMESERVER                    RAC TIME SERVER IP" green
+  c1 "-tsi,            --TIMESERVERIP                    RAC TIME SERVER IP" green
   c1 "-txh            --TuXingHua                     Tu Xing Hua Install" green
   c1 "-udev           --UDEV                          Whether Auto Set UDEV" green
   c1 "-dns            --DNS                           RAC CONFIGURE DNS(Y|N)" green
@@ -442,8 +442,8 @@ while [ -n "$1" ]; do #Here by judging whether $1 exists
     RACPRIVFCNAME1=$2
     shift 2
     ;;
-  -ts | --TIMESERVER)
-    TIMESERVER=$2
+  -tsi | --TIMESERVERIP)
+    TIMESERVERIP=$2
     shift 2
     ;;
   -node | --nodeNum)
@@ -614,8 +614,8 @@ if [ "${nodeNum}" -eq 1 ]; then
         echo -e " -dns ${DNS}\c"
       } >"${SOFTWAREDIR}"/racnode2.sh
       ##TimeServer
-      if [ -n "${TIMESERVER}" ]; then
-        echo -e " -ts ${TIMESERVER}\c" >>"${SOFTWAREDIR}"/racnode2.sh
+      if [ -n "${TIMESERVERIP}" ]; then
+        echo -e " -ts ${TIMESERVERIP}\c" >>"${SOFTWAREDIR}"/racnode2.sh
       fi
 
       ##Two Private ip
@@ -1724,9 +1724,8 @@ EOF
 
     logwrite "chronyd" "systemctl status chronyd"
   fi
-
   ##ntpdate configure
-  if [[ -n $TIMESERVER ]]; then
+  if [[ -n "${TIMESERVERIP}" ]]; then
     yum install -y ntpdate
     if [ ! -f /var/spool/cron/root ]; then
       echo "##For ntpupdate" >>/var/spool/cron/root
@@ -1735,11 +1734,11 @@ EOF
       [ ! -f /var/spool/cron/root."${DAYTIME}" ] && cp /var/spool/cron/root /var/spool/cron/root."${DAYTIME}" >/dev/null 2>&1
       {
         echo "#OracleBegin"
-        echo "00 12 * * * /usr/sbin/ntpdate -u ${TIMESERVER} && /usr/sbin/hwclock -w"
+        echo "00 12 * * * /usr/sbin/ntpdate -u ${TIMESERVERIP} && /usr/sbin/hwclock -w"
         echo "#OracleEnd"
       } >>/var/spool/cron/root
     fi
-    /usr/sbin/ntpdate -u "${TIMESERVER}" && /usr/sbin/hwclock -w
+    /usr/sbin/ntpdate -u "${TIMESERVERIP}" && /usr/sbin/hwclock -w
     logwrite "Time ntpdate" "crontab -l"
   fi
 
