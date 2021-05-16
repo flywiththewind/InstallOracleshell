@@ -926,6 +926,13 @@ InstallRPM() {
           readline* \
           psmisc --skip-broken
       fi
+      ##Solutions: error while loading shared libraries: libnsl.so.1: cannot open shared object
+      ##Requirements for Installing Oracle Database/Client 19c on OL8 or RHEL8 64-bit (x86-64) (Doc ID 2668780.1)
+      if [ "${OS_VERSION}" = "linux8" ]; then
+        dnf install -y librdmacm
+        dnf install -y libnsl*
+        dnf install -y libibverbs
+      fi
     fi
 
   fi
@@ -1925,9 +1932,19 @@ net.core.rmem_default = 262144
 net.core.rmem_max = 4194304
 net.core.wmem_default = 262144
 net.core.wmem_max = 1048576
+EOF
+    if [ "${OS_VERSION}" = "linux8" ]; then
+      cat <<EOF >>/etc/sysctl.conf
+# sysctl kernel.numa_balancing
+kernel.numa_balancing = 0
+EOF
+    fi
+    if [ -n "${RACPUBLICFCNAME}" ] && [ -n "${RACPRIVFCNAME}" ]; then
+      cat <<EOF >>/etc/sysctl.conf
 net.ipv4.conf.${RACPUBLICFCNAME}.rp_filter = 1
 net.ipv4.conf.${RACPRIVFCNAME}.rp_filter = 2
 EOF
+    fi
     if [ -n "${RAC1PRIVIP1}" ] && [ -n "${RAC2PRIVIP1}" ] && [ -n "${RACPRIVFCNAME1}" ]; then
       cat <<EOF >>/etc/sysctl.conf
 net.ipv4.conf.${RACPRIVFCNAME1}.rp_filter = 2
@@ -1959,7 +1976,7 @@ EOF
   ####################################################################################
   # Edit limits.conf
   ####################################################################################
-  if [ "${OS_VERSION}" = "linux7" ] || [ "${OS_VERSION}" = "linux8" ]; then
+  if [ "${OS_VERSION}" = "linux7" ]; then
     sed -i 's/*          soft    nproc     4096/*          -       nproc     16384/g' /etc/security/limits.d/20-nproc.conf
     logwrite "/etc/security/limits.d/20-nproc.conf" "cat /etc/security/limits.d/20-nproc.conf | grep -v \"^\$\"|grep -v \"^#\""
   fi
@@ -2048,7 +2065,7 @@ EOF
   ##ROOT:
   if [ "$OS_VER_PRI" -eq 6 ]; then
     root_profile=/root/.profile
-  elif [ "$OS_VER_PRI" -eq 7 ]; then
+  elif [ "$OS_VER_PRI" -eq 7 ] || [ "$OS_VER_PRI" -eq 8 ]; then
     root_profile=/root/.bash_profile
   fi
   if [ "$(grep -E -c "#OracleBegin" ${root_profile})" -eq 0 ]; then
@@ -2092,6 +2109,12 @@ alias sas='sqlplus / as sysdba'
 alias alert='tail -500f \$ORACLE_BASE/diag/rdbms/\$ORACLE_SID/\$ORACLE_SID/trace/alert_\$ORACLE_SID.log|more'
 export PS1="[\`whoami\`@\`hostname\`:"'\$PWD]\$ '
 EOF
+    ##Users are strongly recommended to go with 19.9 DB RU (or later) to minimize the number of Patches to be installed.19.9 OJVM & OCW RU Patches are also recommended to be applied,during/after the Installation.
+    if [ "${OS_VERSION}" = "linux8" ]; then
+      cat <<EOF >>/home/oracle/.bash_profile
+export CV_ASSUME_DISTID=OL7
+EOF
+    fi
     if rlwrap -v >/dev/null 2>&1; then
       cat <<EOF >>/home/oracle/.bash_profile
 alias sqlplus='rlwrap sqlplus'
@@ -2179,8 +2202,10 @@ EOF
 InstallRlwrap() {
   if [ "$(find "${SOFTWAREDIR}" -maxdepth 1 -name 'rlwrap-*.gz' | wc -l)" -gt 0 ]; then
     if ! rlwrap -v >/dev/null 2>&1; then
-      tar -zxvf "${SOFTWAREDIR}"/rlwrap* -C "${SOFTWAREDIR}"
-      cd "${SOFTWAREDIR}"/rlwrap-* || return
+      yum install -y tar
+      mkdir "${SOFTWAREDIR}"/rlwrap
+      tar -zxvf "${SOFTWAREDIR}"/rlwrap*tar.gz --strip-components 1 -C "${SOFTWAREDIR}"/rlwrap
+      cd "${SOFTWAREDIR}"/rlwrap || return
       ./configure && make && make install
     fi
     logwrite "rlwrap" "rlwrap -v"
@@ -3550,13 +3575,14 @@ EOF
   if [ -f "${ENV_ORACLE_INVEN}"/orainstRoot.sh ] || [ -f "${ENV_ORACLE_HOME}"/root.sh ]; then
     if [ -f "${ENV_ORACLE_INVEN}"/orainstRoot.sh ]; then
       "${ENV_ORACLE_INVEN}"/orainstRoot.sh
+      if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ]; then
+        ssh "$RAC2HOSTNAME" "${ENV_ORACLE_INVEN}"/orainstRoot.sh
+      fi
     fi
     if [ -f "${ENV_ORACLE_HOME}"/root.sh ]; then
       "${ENV_ORACLE_HOME}"/root.sh
       if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ]; then
-        if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ]; then
-          ssh "$RAC2HOSTNAME" "${ENV_ORACLE_HOME}"/root.sh
-        fi
+        ssh "$RAC2HOSTNAME" "${ENV_ORACLE_HOME}"/root.sh
       fi
     fi
   else
@@ -3658,7 +3684,9 @@ EOF
     if [ -d "/${SOFTWAREDIR}/""${OPATCH}" ] && [ -n "${OPATCH}" ]; then
       cd ~ || return
       rm -rf "/${SOFTWAREDIR:?}/""${OPATCH}"
-      ssh "$RAC2HOSTNAME" "/${SOFTWAREDIR:?}/""${OPATCH}"
+      if [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ]; then
+        ssh "$RAC2HOSTNAME" "/${SOFTWAREDIR:?}/""${OPATCH}"
+      fi
     fi
   fi
 }
