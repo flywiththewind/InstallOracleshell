@@ -615,7 +615,7 @@ if [ "${nodeNum}" -eq 1 ]; then
       } >"${SOFTWAREDIR}"/racnode2.sh
       ##TimeServer
       if [ -n "${TIMESERVERIP}" ]; then
-        echo -e " -ts ${TIMESERVERIP}\c" >>"${SOFTWAREDIR}"/racnode2.sh
+        echo -e " -tsi ${TIMESERVERIP}\c" >>"${SOFTWAREDIR}"/racnode2.sh
       fi
 
       ##Two Private ip
@@ -932,6 +932,8 @@ InstallRPM() {
         dnf install -y librdmacm
         dnf install -y libnsl*
         dnf install -y libibverbs
+        ##Linux Troubleshooting – semanage command not found in CentOS 7/8 And RHEL 7/8
+        dnf install -y policycoreutils-python-utils
       fi
     fi
 
@@ -944,7 +946,7 @@ InstallRPM() {
         USER_PROMPT="*# "
         $EXPECT <<EOF
 spawn ssh "$RAC2PUBLICIP" yum install -y openssh-client*
-expect "*(yes/no)?*" {
+expect "*(yes/no?*" {
         send -- "yes\r"
         expect "*?assword:*"
         send -- "$ROOTPASSWD\r"
@@ -1008,8 +1010,10 @@ EOF
 
   if [ "${OS_VERSION}" = "linux6" ]; then
     logwrite "RPM Check" "rpm -q bc binutils compat-libcap1 compat-libstdc++-33 gcc gcc-c++ elfutils-libelf elfutils-libelf-devel glibc glibc-devel libaio libaio-devel libgcc libstdc++ libstdc++-devel libxcb libX11 libXau libXi libXrender make net-tools smartmontools sysstat e2fsprogs e2fsprogs-libs expect unzip openssh-clients readline"
-  elif [ "${OS_VERSION}" = "linux7" ] || [ "${OS_VERSION}" = "linux8" ]; then
+  elif [ "${OS_VERSION}" = "linux7" ]; then
     logwrite "RPM Check" "rpm -q bc binutils compat-libcap1 compat-libstdc++-33 gcc gcc-c++ elfutils-libelf elfutils-libelf-devel glibc glibc-devel ksh libaio libaio-devel libgcc libstdc++ libstdc++-devel libxcb libX11 libXau libXi libXtst libXrender libXrender-devel make net-tools nfs-utils smartmontools sysstat e2fsprogs e2fsprogs-libs fontconfig-devel expect unzip openssh-clients readline"
+  elif [ "${OS_VERSION}" = "linux8" ]; then
+    logwrite "RPM Check" "rpm -q bc binutils gcc gcc-c++ elfutils-libelf elfutils-libelf-devel glibc glibc-devel ksh libaio libaio-devel libgcc libstdc++ libstdc++-devel libxcb libX11 libXau libXi libXtst libXrender libXrender-devel make net-tools nfs-utils smartmontools sysstat e2fsprogs e2fsprogs-libs fontconfig-devel expect unzip openssh-clients readline librdmacm libnsl libibverbs policycoreutils-python-utils"
   fi
 }
 
@@ -1710,7 +1714,7 @@ NodeTwoExec() {
   c1 "Now Excute Script on Node2:" blue
   ssh "$RAC2PUBLICIP" chmod +x "${SOFTWAREDIR}"/racnode2.sh
   ##https://www.cnblogs.com/youngerger/p/9104144.html
-  ssh -t "$RAC2PUBLICIP" sh "${SOFTWAREDIR}"/racnode2.sh
+  ssh -t "$RAC2PUBLICIP" "cd ${SOFTWAREDIR};sh ${SOFTWAREDIR}/racnode2.sh"
   if [ -f "${SOFTWAREDIR}"/racnode2.sh ]; then
     rm -rf "${SOFTWAREDIR}"/racnode2.sh
   fi
@@ -1770,11 +1774,11 @@ EOF
         [ ! -f /var/spool/cron/root."${DAYTIME}" ] && cp /var/spool/cron/root /var/spool/cron/root."${DAYTIME}" >/dev/null 2>&1
         {
           echo "#OracleBegin"
-          echo "00 12 * * * /usr/sbin/chronyd -q "server "${TIMESERVERIP}" iburst" && timedatectl set-local-rtc true"
+          echo "00 12 * * * /usr/sbin/chronyd -q \"server ${TIMESERVERIP} iburst \" && timedatectl set-local-rtc 0"
           echo " #OracleEnd"
         } >>/var/spool/cron/root
       fi
-      chronyd -q "server ${TIMESERVERIP} iburst" && timedatectl set-local-rtc true
+      chronyd -q "server ${TIMESERVERIP} iburst" && timedatectl set-local-rtc 0
     fi
     logwrite "Time ntpdate" "crontab -l"
   fi
@@ -2055,7 +2059,7 @@ EOF
 
   fi
 
-  logwrite "/etc/fstab" "cat /etc/fstab"
+  logwrite "/etc/fstab" "cat /etc/fstab | grep -v \"^\$\"|grep -v \"^#\""
   logwrite "shm" "df -Th /dev/shm"
   logwrite "df -hP" "df -hP"
 
@@ -4112,7 +4116,7 @@ if [ "${OracleInstallMode}" = "single" ] || [ "${OracleInstallMode}" = "SINGLE" 
   DisableFirewall
   DisableSelinux
   DisableTHPAndNUMA
-  DisableNetworkManager
+  #DisableNetworkManager
   InstallRlwrap
   EditParaFiles
   UnzipDBSoft
@@ -4167,7 +4171,7 @@ elif [ "${OracleInstallMode}" = "rac" ] || [ "${OracleInstallMode}" = "RAC" ]; t
   DisableFirewall
   DisableSelinux
   DisableTHPAndNUMA
-  DisableNetworkManager
+  #DisableNetworkManager
   InstallRlwrap
   EditParaFiles
   if [ "$nodeNum" -eq 1 ]; then
@@ -4222,7 +4226,7 @@ elif [ "${OracleInstallMode}" = "restart" ] || [ "${OracleInstallMode}" = "RESTA
   DisableFirewall
   DisableSelinux
   DisableTHPAndNUMA
-  DisableNetworkManager
+  #DisableNetworkManager
   InstallRlwrap
   EditParaFiles
   UnzipGridSoft
